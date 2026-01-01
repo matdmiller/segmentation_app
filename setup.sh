@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Root of the repo
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 cd "$REPO_ROOT"
 
 info() { printf "[setup] %s\n" "$*"; }
@@ -37,6 +37,9 @@ fi
 # Hugging Face authentication (HUGGINGFACE_TOKEN or HF_TOKEN)
 hf_token="${HUGGINGFACE_TOKEN:-${HF_TOKEN:-}}"
 if [[ -n "$hf_token" ]]; then
+  info "Installing huggingface-cli for Hugging Face login..."
+  uv pip install huggingface_hub
+
   info "Logging into Hugging Face from setup.sh..."
   huggingface-cli login --token "$hf_token" --add-to-git-credential
 else
