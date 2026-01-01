@@ -38,10 +38,15 @@ fi
 hf_token="${HUGGINGFACE_TOKEN:-${HF_TOKEN:-}}"
 if [[ -n "$hf_token" ]]; then
   info "Installing huggingface-cli for Hugging Face login..."
-  uv pip install huggingface_hub
+  uv pip install -U huggingface_hub
 
-  info "Logging into Hugging Face from setup.sh..."
-  huggingface-cli login --token "$hf_token" --add-to-git-credential
+  # Use the .venv/bin/huggingface-cli directly to ensure the virtual environment binary is used
+  if [[ -f ".venv/bin/huggingface-cli" ]]; then
+    info "Logging into Hugging Face from setup.sh..."
+    .venv/bin/huggingface-cli login --token "$hf_token" --add-to-git-credential
+  else
+    warn "huggingface-cli not found after installation. Please check your setup or reinstall."
+  fi
 else
   warn "Hugging Face token not provided; skipping Hugging Face login."
 fi
