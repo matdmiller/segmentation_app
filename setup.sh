@@ -29,7 +29,7 @@ mkdir -p data tests/tmp
 modal_profile="${MODAL_PROFILE:-default}"
 if [[ -n "${MODAL_TOKEN_ID:-}" && -n "${MODAL_TOKEN_SECRET:-}" ]]; then
   info "Configuring Modal token for profile '${modal_profile}'..."
-  modal token set --token-id "$MODAL_TOKEN_ID" --token-secret "$MODAL_TOKEN_SECRET" --profile "$modal_profile"
+  MODAL_LOGLEVEL=DEBUG MODAL_TRACEBACK=1 modal token set --token-id "$MODAL_TOKEN_ID" --token-secret "$MODAL_TOKEN_SECRET" --profile "$modal_profile" --no-verify
 else
   warn "Modal token env vars (MODAL_TOKEN_ID and MODAL_TOKEN_SECRET) not fully set; skipping Modal login."
 fi
