@@ -1,0 +1,37 @@
+FROM mcr.microsoft.com/playwright:v1.57.0-jammy
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    UV_CACHE_DIR=/app/.uv-cache \
+    UV_PYTHON_DOWNLOADS=never \
+    XDG_CACHE_HOME=/app/.cache \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-venv \
+    python3-pip \
+    python-is-python3 \
+    git \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+RUN python -m pip install --no-cache-dir uv
+RUN uv venv /app/.venv
+
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHON=/app/.venv/bin/python
+
+RUN uv pip install --python /app/.venv/bin/python -U python-fasthtml pillow modal monsterui huggingface_hub numpy
+
+COPY . .
+RUN mkdir -p data tests/tmp
+
+ENV PORT=8765
+CMD ["npm", "test"]

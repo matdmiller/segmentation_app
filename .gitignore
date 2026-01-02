@@ -4,9 +4,12 @@ __pycache__/
 .data
 .cache
 venv/
+.venv/
 .data/
 data/
 tests/tmp/
 node_modules/
 test-results/
 .sesskey
+.secrets/
+.specstory/

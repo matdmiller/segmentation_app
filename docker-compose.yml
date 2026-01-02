@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+    secrets:
+      - modal_token_id
+      - modal_token_secret
+      - huggingface_token
+      - modal_hf_secret_name
+
+secrets:
+  modal_token_id:
+    file: .secrets/modal_token_id
+  modal_token_secret:
+    file: .secrets/modal_token_secret
+  huggingface_token:
+    file: .secrets/huggingface_token
+  modal_hf_secret_name:
+    file: .secrets/modal_hf_secret_name

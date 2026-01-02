@@ -13,13 +13,19 @@ This repository hosts a minimal FastHTML web app that runs Meta's SAM 3 image se
 - `modal_app.py` – Modal deployment for SAM 3 inference on an A10G GPU.
 - `requirements.md` – Current requirements and open assumptions.
 - `data/` – Temporary image uploads (not committed).
+- `Dockerfile` – Runtime container for the FastHTML app.
+- `docker-compose.yml` – Compose stack with secrets for Modal/HF tokens.
+- `docker-entrypoint.sh` – Loads secrets into env vars at container start.
+- `tests/Dockerfile.e2e` – Playwright E2E test container.
+- `tests/Makefile` – E2E build targets.
 
 ## Prerequisites
 - Python 3.10+
 - `uv` for Python environment + dependency management (`pip install uv` if needed)
 - Modal token and Hugging Face token available in the environment (used only during setup; never exposed to the frontend).
+- Docker + Docker Compose (for containerized runs/tests)
 
-## One-time setup
+## One-time setup (local dev)
 Run the provided setup script to provision the Python/Node environments, configure Modal, and (optionally) log in to Hugging Face
 if a token exists in the environment:
 ```bash
@@ -47,19 +53,66 @@ The script:
 
 Open http://localhost:8000 to use the app.
 
-## Deploying to Modal
-Deploy the SAM 3 worker:
+## Running with Docker Compose (recommended for containerized runs)
+1. Fill the secrets files (gitignored):
+   - `.secrets/modal_token_id`
+   - `.secrets/modal_token_secret`
+   - `.secrets/huggingface_token`
+2. Build and start:
+   ```bash
+   docker compose up --build
+   ```
+
+Open http://localhost:8000 to use the app.
+
+## Running the app container directly (no compose)
+If you prefer `docker run`, pass tokens via environment variables:
 ```bash
-modal deploy modal_app.py
+docker build -t segmentation-app .
+docker run --rm -p 8000:8000 \
+  -e MODAL_TOKEN_ID=... \
+  -e MODAL_TOKEN_SECRET=... \
+  -e HUGGINGFACE_TOKEN=... \
+  segmentation-app
 ```
 
+## Deploying Changes
+**IMPORTANT:** After making code changes, always follow this workflow:
+```bash
+# 1. Rebuild Docker to include latest code changes
+docker compose build --no-cache
+
+# 2. Deploy Modal from within the container
+docker compose run --rm -e MODAL_TOKEN_ID -e MODAL_TOKEN_SECRET app modal deploy modal_app.py
+
+# 3. Restart the local container to pick up new code
+docker compose down && docker compose up -d
+```
+
+This ensures both the deployed Modal app AND your local container use the latest code.
+
 Ensure GPU type remains `A10G` when modifying the deployment.
+The Modal app name defaults to `sam3-segmentation` and can be overridden with `MODAL_APP_NAME`.
+If SAM 3 weights require Hugging Face access, either set `HUGGINGFACE_TOKEN`/`HF_TOKEN` in the deploy environment
+or create a Modal secret and set `MODAL_HF_SECRET_NAME` to its name before deploying.
 
 ## Downloading Predictions
 Use the "Download predictions" button to save the latest predictions JSON, which includes prompts and mask geometry.
 
 ## Running Browser Tests (required before finishing changes)
-Install Playwright dependencies and run the tests (the app will be started automatically on a test port):
+Use the Dockerized E2E runner (builds `tests/Dockerfile.e2e` and runs Playwright in the container, mounting `.secrets` when present):
+```bash
+make -C tests e2e
+```
+For a clean rebuild:
+```bash
+make -C tests e2e-clean
+```
+
+Modal-backed segmentation is required by default; ensure `MODAL_TOKEN_ID`/`MODAL_TOKEN_SECRET` are set (or stored in `.secrets/`).
+To skip Modal-backed tests (UI-only), set `E2E_SKIP_MODAL=1`.
+
+If you want to run locally instead, install Playwright dependencies and run the tests (the app will be started automatically on a test port):
 ```bash
 npm install
 npx playwright install chromium

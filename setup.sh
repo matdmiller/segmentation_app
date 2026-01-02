@@ -20,7 +20,7 @@ uv venv
 source .venv/bin/activate
 
 info "Installing Python dependencies with uv pip..."
-uv pip install -U "git+https://github.com/AnswerDotAI/fasthtml.git" pillow modal monsterui huggingface_hub
+uv pip install -U python-fasthtml pillow modal monsterui huggingface_hub
 
 info "Ensuring temp directories exist..."
 mkdir -p data tests/tmp
